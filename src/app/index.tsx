@@ -1,13 +1,13 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { AnimatedIcon } from '@/components/animated-icon';
 import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import * as Device from 'expo-device';
+import { Platform, StyleSheet } from 'react-native';
+import { check, PERMISSIONS, request, RESULTS } from 'react-native-permissions';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function getDevMenuHint() {
   if (Platform.OS === 'web') {
@@ -35,7 +35,7 @@ export default function HomeScreen() {
         <ThemedView style={styles.heroSection}>
           <AnimatedIcon />
           <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
+            Health consultation
           </ThemedText>
         </ThemedView>
 
@@ -96,3 +96,32 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.four,
   },
 });
+
+const handleCameraPermission = async () => {
+  // 1. Ensure we are operating on iOS
+  if (Platform.OS !== 'ios') return true;
+
+  try {
+    // 2. Check current status
+    const status = await check(PERMISSIONS.IOS.CAMERA);
+
+    if (status === RESULTS.GRANTED) {
+      return true; // Already allowed
+    }
+
+    if (status === RESULTS.DENIED) {
+      // 3. Request native iOS permission alert
+      const requestStatus = await request(PERMISSIONS.IOS.CAMERA);
+      return requestStatus === RESULTS.GRANTED;
+    }
+
+    if (status === RESULTS.BLOCKED) {
+      console.warn('Camera permission is permanently denied in iOS settings.');
+      // Optional: Prompt user with an Alert to open native App Settings
+      return false;
+    }
+  } catch (error) {
+    console.error('Permission error: ', error);
+    return false;
+  }
+};
